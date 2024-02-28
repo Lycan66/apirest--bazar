@@ -32,13 +32,14 @@ public class VentaServiceImp implements VentaService {
         ventaRepo.save(venta);
     }
 
-    private Map<Long, Double> mantenerCantidadVendidaPorProducto(List<Producto> productos){
+    private Map<Long, Double> mantenerCantidadVendidaPorProducto(List<Producto> productos) {
         Map<Long, Double> cantidadVendidaProducto = new HashMap<>();
-        for (Producto pro : productos){
+        for (Producto pro : productos) {
             cantidadVendidaProducto.put(pro.getCodigo(), pro.getCantidadVendida());
         }
         return cantidadVendidaProducto;
     }
+
     @Override
     public Venta findVentaById(Long id) {
         Venta venta = ventaRepo.findById(id).orElse(null);
@@ -60,23 +61,14 @@ public class VentaServiceImp implements VentaService {
     }
 
     private List<Producto> updateProductosVendidos(Venta venta) throws Exception {
-        List<Producto> listaProductosVendidos = venta.getListaProductos();
-        List<Producto> listaProductosVendidosActualizados = new ArrayList<>();
+        List<Producto> productosActualizados = new ArrayList<>();
 
-        for (Producto producto : listaProductosVendidos) {
-            Producto producto_bd = productoService.findProductoById(producto.getCodigo());
-            Double cantidadVendidaDelProducto = producto_bd.getCantidadVendida();
-            
-            producto_bd.setCantidadVendida(cantidadVendidaDelProducto += producto.getCantidadVendida());
-            producto_bd.descontarStock(producto.getCantidadVendida());
-            listaProductosVendidosActualizados.add(producto_bd);
+        for (Producto producto : venta.getListaProductos()) {
+            Producto updated_product = updateCantidadVendidaDelProducto(producto);
+            productosActualizados.add(updated_product);
         }
-
-        for (Producto producto : listaProductosVendidosActualizados) {
-            productoService.updateProducto(producto);
-        }
-
-        return listaProductosVendidosActualizados;
+        productoService.actualizarTodosLosProductos(productosActualizados);
+        return productosActualizados;
     }
 
     @Override
@@ -87,13 +79,13 @@ public class VentaServiceImp implements VentaService {
     }
 
     @Override
-    public Double getMontoTotalDeVentasPorFecha(LocalDate fecha) throws Exception{
+    public Double getMontoTotalDeVentasPorFecha(LocalDate fecha) throws Exception {
         List<Venta> ventas = getVentasByFecha(fecha);
         Double montoTotal = 0.0;
-        if (ventas.isEmpty()){
-            throw new Exception ("No hay ventas");
+        if (ventas.isEmpty()) {
+            throw new Exception("No hay ventas");
         }
-        
+
         for (Venta venta : ventas) {
             montoTotal += venta.getTotal();
         }
@@ -103,20 +95,20 @@ public class VentaServiceImp implements VentaService {
     @Override
     public int getNumeroDeVentasPorFecha(LocalDate fecha) throws Exception {
         List<Venta> ventas = getVentasByFecha(fecha);
-        if (ventas.isEmpty()){
-            throw new Exception ("No hay ventas");
+        if (ventas.isEmpty()) {
+            throw new Exception("No hay ventas");
         }
         return ventas.size();
     }
 
-    private List<Venta> getVentasByFecha(LocalDate fecha) throws Exception{
-        LocalDate hoy = LocalDate.now();
-        if (fecha.isAfter(hoy)){
+    private List<Venta> getVentasByFecha(LocalDate fecha) throws Exception {
+        List<Venta> ventasDelDia = new ArrayList<>();
+        final LocalDate HOY = LocalDate.now();
+        
+        if (fecha.isAfter(HOY)) {
             throw new Exception("Ingrese una fecha correcta");
         }
         
-        List<Venta> ventasDelDia = new ArrayList<>();
-
         for (Venta venta : this.getVentas()) {
             if (venta.getFecha().toLocalDate().equals(fecha)) {
                 ventasDelDia.add(venta);
@@ -126,10 +118,10 @@ public class VentaServiceImp implements VentaService {
     }
 
     @Override
-    public String getNumeroVentasYMontoTotalPorFecha(LocalDate fecha) throws Exception{
+    public String getNumeroVentasYMontoTotalPorFecha(LocalDate fecha) throws Exception {
         Double monto_total = getMontoTotalDeVentasPorFecha(fecha);
         int cantidad_ventas = getNumeroDeVentasPorFecha(fecha);
-        
+
         return "Cantidad de ventas: " + cantidad_ventas + "\nMonto: " + monto_total;
     }
 
@@ -137,13 +129,23 @@ public class VentaServiceImp implements VentaService {
     public Venta getVentaMasAlta() {
         Venta ventaMayor = null;
         Double mayor = 0.0;
-        
-        for (Venta venta : this.getVentas()){
-            if (venta.getTotal() >= mayor){
+
+        for (Venta venta : this.getVentas()) {
+            if (venta.getTotal() >= mayor) {
                 mayor = venta.getTotal();
                 ventaMayor = venta;
             }
         }
         return ventaMayor;
+    }
+
+    private Producto updateCantidadVendidaDelProducto(Producto producto) throws Exception {
+        Producto updated_product = productoService.findProductoById(producto.getCodigo());
+        Double cantidadVendidaDelProducto = updated_product.getCantidadVendida();
+
+        updated_product.setCantidadVendida(cantidadVendidaDelProducto += producto.getCantidadVendida());
+        updated_product.descontarStock(producto.getCantidadVendida());
+        
+        return updated_product;
     }
 }

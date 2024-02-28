@@ -11,4 +11,5 @@ public interface ProductoService {
     public void deleteProducto(Long id);
     public List<Producto> getProductos();
     public List<Producto> getProductosOutOfStock();
+    public void actualizarTodosLosProductos(List<Producto> productos);
 }

@@ -2,7 +2,6 @@ package com.proyectofinal.bazar.service;
 
 import com.proyectofinal.bazar.model.Producto;
 import com.proyectofinal.bazar.repository.ProductoRepository;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +65,11 @@ public class ProductoServiceImp implements ProductoService{
         }
         
         return productosFaltaStock;
+    }
+
+    @Override
+    public void actualizarTodosLosProductos(List<Producto> productos) {
+        productoRepo.saveAll(productos);
     }
     
 }
